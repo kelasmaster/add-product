@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price List App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 10px;
+        }
+
+        input, button {
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        .total-price {
+            margin-top: 20px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            form {
+                padding: 10px;
+            }
+
+            input, button {
+                font-size: 14px;
+                padding: 8px;
+            }
+
+            table {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Price List Application</h1>
+
+        <!-- Section 1: Name, Address, Phone -->
+        <div class="section">
+            <h2>Customer Information</h2>
+            <form id="customerForm">
+                <label for="name">Name:</label>
+                <input type="text" id="name" placeholder="Enter your name" required>
+
+                <label for="address">Address:</label>
+                <input type="text" id="address" placeholder="Enter your address" required>
+
+                <label for="phone">Phone:</label>
+                <input type="tel" id="phone" placeholder="Enter your phone number" required>
+            </form>
+        </div>
+
+        <!-- Section 2: Product Name, Product Price, Add Product -->
+        <div class="section">
+            <h2>Product Information</h2>
+            <form id="productForm">
+                <label for="productName">Product Name:</label>
+                <input type="text" id="productName" placeholder="Enter product name" required>
+
+                <label for="productPrice">Product Price:</label>
+                <input type="number" id="productPrice" placeholder="Enter product price" required>
+
+                <button type="submit">Add Product</button>
+            </form>
+        </div>
+
+        <!-- Display Table -->
+        <h2>Product List</h2>
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Product Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Products will be added here dynamically -->
+            </tbody>
+        </table>
+
+        <!-- Total Price -->
+        <div class="total-price" id="totalPrice">Total Price: $0</div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+            <button id="printButton">Print</button>
+            <button id="sendToWhatsApp">Send to WhatsApp</button>
+        </div>
+    </div>
+
+    <script>
+        let totalPrice = 0;
+
+        // Handle adding products to the table and updating total price
+        document.getElementById('productForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Get input values
+            const productName = document.getElementById('productName').value;
+            const productPrice = parseFloat(document.getElementById('productPrice').value);
+
+            if (isNaN(productPrice)) {
+                alert("Please enter a valid price.");
+                return;
+            }
+
+            // Update total price
+            totalPrice += productPrice;
+            document.getElementById('totalPrice').textContent = `Total Price: $${totalPrice.toFixed(2)}`;
+
+            // Create a new row in the table
+            const tableBody = document.querySelector('#productTable tbody');
+            const newRow = document.createElement('tr');
+
+            newRow.innerHTML = `
+                <td>${productName}</td>
+                <td>$${productPrice.toFixed(2)}</td>
+            `;
+
+            tableBody.appendChild(newRow);
+
+            // Clear the form
+            document.getElementById('productForm').reset();
+        });
+
+        // Print functionality
+        document.getElementById('printButton').addEventListener('click', function() {
+            window.print();
+        });
+
+        // Send to WhatsApp functionality
+        document.getElementById('sendToWhatsApp').addEventListener('click', function() {
+            // Get customer information
+            const name = document.getElementById('name').value;
+            const address = document.getElementById('address').value;
+            const phone = document.getElementById('phone').value;
+
+            // Get product data from the table
+            const tableData = [];
+            const rows = document.querySelectorAll('#productTable tbody tr');
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowData = {
+                    productName: cells[0].innerText,
+                    productPrice: cells[1].innerText
+                };
+                tableData.push(rowData);
+            });
+
+            // Construct the message
+            let whatsappMessage = `Customer Information:\nName: ${name}\nAddress: ${address}\nPhone: ${phone}\n\nProduct List:\n`;
+
+            tableData.forEach((item, index) => {
+                whatsappMessage += `Item ${index + 1}:\n`;
+                whatsappMessage += `Product: ${item.productName}\n`;
+                whatsappMessage += `Price: ${item.productPrice}\n\n`;
+            });
+
+            // Add total price to the message
+            whatsappMessage += `Total Price: $${totalPrice.toFixed(2)}`;
+
+            // Encode the message for WhatsApp URL
+            const encodedMessage = encodeURIComponent(whatsappMessage);
+            const whatsappURL = `https://wa.me/?text=${encodedMessage}`;
+
+            // Open WhatsApp with the message
+            window.open(whatsappURL, '_blank');
+        });
+    </script>
+</body>
+</html>
